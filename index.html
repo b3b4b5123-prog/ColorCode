@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Gradient QR Code Generator</title>
+<script src="https://cdn.jsdelivr.net/npm/qrcodejs/qrcode.min.js"></script>
+<style>
+body{
+margin:0;
+font-family:Arial;
+background:linear-gradient(270deg,#667eea,#764ba2,#43cea2);
+background-size:600% 600%;
+animation:bgMove 12s infinite alternate;
+display:flex;
+justify-content:center;
+align-items:flex-start;
+flex-direction:column;
+min-height:100vh;
+}
+@keyframes bgMove{
+0%{background-position:0% 50%;}
+100%{background-position:100% 50%;}
+}
+.container{
+background:white;
+padding:30px;
+border-radius:20px;
+box-shadow:0 20px 40px rgba(0,0,0,0.25);
+text-align:center;
+width:350px;
+margin-top:30px;
+animation:fadeIn 1s;
+}
+@keyframes fadeIn{
+from{opacity:0;transform:translateY(20px);}
+to{opacity:1;transform:translateY(0);}
+}
+h1{margin-bottom:15px;}
+input, label{width:100%;margin:5px 0;}
+input[type="color"]{height:40px;}
+button{padding:10px 18px;margin:6px;border:none;border-radius:8px;background:#667eea;color:white;font-size:15px;cursor:pointer;transition:0.3s;}
+button:hover{transform:scale(1.08);background:#5563d6;}
+#qrcode{margin-top:20px;display:flex;justify-content:center;transition:all 0.3s;}
+#disclaimer{
+margin-top:auto;
+background-color:#000;
+color:#fff;
+padding:15px;
+font-size:12px;
+text-align:center;
+line-height:1.4;
+width:100%;
+}
+</style>
+</head>
+<body>
+<div class="container">
+<h1>Gradient QR Code Generator</h1>
+
+<input id="textInput" placeholder="Enter text or link">
+
+<label>Gradient Start Color</label>
+<input type="color" id="startColor" value="#000000">
+
+<label>Gradient End Color</label>
+<input type="color" id="endColor" value="#ff0000">
+
+<button onclick="generateQR()">Generate QR</button>
+<button onclick="downloadQR()">Download PNG</button>
+
+<div id="qrcode"></div>
+</div>
+
+<div id="disclaimer">
+<strong>Disclaimer:</strong> This tool generates QR Codes based on the text or links provided by users. The website owner is <u>not responsible</u> for any illegal, harmful, or copyrighted content entered. Users are responsible for the content they generate and share. No personal information is collected or stored. Use this tool responsibly.
+</div>
+
+<script>
+function generateQR(){
+let text=document.getElementById("textInput").value.trim();
+let startColor=document.getElementById("startColor").value;
+let endColor=document.getElementById("endColor").value;
+
+if(text && !/^https?:\/\//.test(text) && text.includes('.')){
+    text = 'https://' + text;
+}
+
+if(!text){alert("Enter text or link"); return;}
+
+document.getElementById("qrcode").innerHTML="";
+
+let qrDiv=document.getElementById("qrcode");
+let qr = new QRCode(qrDiv,{
+    text:text,
+    width:220,
+    height:220,
+    colorDark:"#000000",
+    colorLight:"#ffffff"
+});
+
+setTimeout(()=>{
+    let canvas=qrDiv.querySelector("canvas");
+    if(!canvas) return;
+    let ctx=canvas.getContext("2d");
+
+    let imageData=ctx.getImageData(0,0,canvas.width,canvas.height);
+    let data=imageData.data;
+
+    for(let y=0;y<canvas.height;y++){
+        let ratio=y/(canvas.height-1);
+        let r=parseInt(parseInt(startColor.slice(1,3),16)*(1-ratio)+parseInt(endColor.slice(1,3),16)*ratio);
+        let g=parseInt(parseInt(startColor.slice(3,5),16)*(1-ratio)+parseInt(endColor.slice(3,5),16)*ratio);
+        let b=parseInt(parseInt(startColor.slice(5,7),16)*(1-ratio)+parseInt(endColor.slice(5,7),16)*ratio);
+
+        for(let x=0;x<canvas.width;x++){
+            let idx=(y*canvas.width+x)*4;
+            if(data[idx]<128 && data[idx+1]<128 && data[idx+2]<128){
+                data[idx]=r;
+                data[idx+1]=g;
+                data[idx+2]=b;
+            }
+        }
+    }
+    ctx.putImageData(imageData,0,0);
+
+    canvas.style.transform="scale(0.8)";
+    setTimeout(()=>{canvas.style.transform="scale(1)";},50);
+
+},300);
+}
+
+function downloadQR(){
+let canvas=document.querySelector("#qrcode canvas");
+if(!canvas){alert("Generate QR first"); return;}
+let link=document.createElement("a");
+link.href=canvas.toDataURL("image/png");
+link.download="qrcode.png";
+document.body.appendChild(link);
+link.click();
+document.body.removeChild(link);
+}
+</script>
+</body>
+</html>
